@@ -1,13 +1,17 @@
 package com.fileshare.handlers;
 
 import com.fileshare.core.Storage;
+import com.fileshare.utils.HttpUtils;
+import com.fileshare.utils.JsonUtils;
+import com.fileshare.utils.PathUtils;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import java.io.IOException;
-import java.io.OutputStream;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 
+/**
+ * Обработчик удаления файлов
+ */
 public class FileDeleteHandler implements HttpHandler {
     private final Storage storage;
 
@@ -17,50 +21,32 @@ public class FileDeleteHandler implements HttpHandler {
 
     @Override
     public void handle(HttpExchange exchange) throws IOException {
-        if (!exchange.getRequestMethod().equalsIgnoreCase("DELETE")) {
-            exchange.sendResponseHeaders(405, -1);
+        if (!HttpUtils.isMethod(exchange, "DELETE")) {
+            HttpUtils.sendMethodNotAllowed(exchange);
             return;
         }
         
-        String path = exchange.getRequestURI().getPath();
-        String[] parts = path.split("/");
-        if (parts.length < 4) {
-            exchange.sendResponseHeaders(400, -1);
+        String token = PathUtils.extractTokenFromDeletePath(exchange.getRequestURI().getPath());
+        if (token == null) {
+            HttpUtils.sendBadRequest(exchange);
             return;
         }
-        
-        String token = parts[3];
         
         try {
             if (storage.readMeta(token) == null) {
-                String error = "{\"error\":\"File not found\"}";
-                byte[] bytes = error.getBytes(StandardCharsets.UTF_8);
-                exchange.getResponseHeaders().add("Content-Type", "application/json; charset=utf-8");
-                exchange.sendResponseHeaders(404, bytes.length);
-                try (OutputStream os = exchange.getResponseBody()) {
-                    os.write(bytes);
-                }
+                HttpUtils.sendJsonResponse(exchange, 404, JsonUtils.createErrorJson("File not found"));
                 return;
             }
             
-            Files.deleteIfExists(storage.filePath(token));
-            Files.deleteIfExists(storage.metaPath(token));
-            
-            String success = "{\"success\":true}";
-            byte[] bytes = success.getBytes(StandardCharsets.UTF_8);
-            exchange.getResponseHeaders().add("Content-Type", "application/json; charset=utf-8");
-            exchange.sendResponseHeaders(200, bytes.length);
-            try (OutputStream os = exchange.getResponseBody()) {
-                os.write(bytes);
-            }
+            deleteFileAndMeta(token);
+            HttpUtils.sendJsonResponse(exchange, 200, "{\"success\":true}");
         } catch (Exception e) {
-            String error = "{\"error\":\"Failed to delete file\"}";
-            byte[] bytes = error.getBytes(StandardCharsets.UTF_8);
-            exchange.getResponseHeaders().add("Content-Type", "application/json; charset=utf-8");
-            exchange.sendResponseHeaders(500, bytes.length);
-            try (OutputStream os = exchange.getResponseBody()) {
-                os.write(bytes);
-            }
+            HttpUtils.sendJsonResponse(exchange, 500, JsonUtils.createErrorJson("Failed to delete file"));
         }
+    }
+    
+    private void deleteFileAndMeta(String token) throws IOException {
+        Files.deleteIfExists(storage.filePath(token));
+        Files.deleteIfExists(storage.metaPath(token));
     }
 }

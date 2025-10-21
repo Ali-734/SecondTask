@@ -1,20 +1,156 @@
+const authForm = document.getElementById('authForm');
+const usernameInput = document.getElementById('usernameInput');
+const authStatusEl = document.getElementById('authStatus');
+const authSectionEl = document.getElementById('authSection');
+const uploadSectionEl = document.getElementById('uploadSection');
+const userWelcomeEl = document.getElementById('userWelcome');
 const form = document.getElementById('uploadForm');
 const fileInput = document.getElementById('fileInput');
+const selectedFileEl = document.getElementById('selectedFile');
+const fileNameEl = document.getElementById('fileName');
+const fileSizeEl = document.getElementById('fileSize');
 const statusEl = document.getElementById('status');
 const linkEl = document.getElementById('link');
 const filesListEl = document.getElementById('filesList');
-const authMessageEl = document.getElementById('authMessage');
 const statsContentEl = document.getElementById('statsContent');
 
 let currentFiles = [];
+let authToken = null;
+let currentUsername = null;
 
+// Авторизация пользователя - получение токена по имени
+async function authenticate(username) {
+  try {
+    const response = await fetch('/api/auth', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ username: username })
+    });
+    
+    if (!response.ok) {
+      throw new Error('Ошибка авторизации');
+    }
+    
+    const data = await response.json();
+    authToken = data.token;
+    currentUsername = data.username;
+    
+    // Сохраняем токен в localStorage
+    localStorage.setItem('authToken', authToken);
+    localStorage.setItem('username', currentUsername);
+    
+    // Показываем секцию загрузки файлов
+    authSectionEl.classList.add('hidden');
+    uploadSectionEl.classList.remove('hidden');
+    
+    // Обновляем приветствие
+    userWelcomeEl.textContent = `Вы вошли как: ${currentUsername}`;
+    
+        // Очищаем форму загрузки при входе
+    clearUploadForm();
+    
+    authStatusEl.textContent = `Успешно! Добро пожаловать, ${currentUsername}!`;
+    authStatusEl.className = 'success';
+        
+        // После успешной авторизации сразу подтягиваем список и статистику
+        await refreshFilesListAndStats();
+    
+    return true;
+  } catch (error) {
+    authStatusEl.textContent = 'Ошибка авторизации. Попробуйте еще раз.';
+    authStatusEl.className = 'error';
+    return false;
+  }
+}
+
+// Выход из системы - очистка токена и формы
+function logout() {
+  authToken = null;
+  currentUsername = null;
+  localStorage.removeItem('authToken');
+  localStorage.removeItem('username');
+  
+  authSectionEl.classList.remove('hidden');
+  uploadSectionEl.classList.add('hidden');
+  authStatusEl.textContent = '';
+  authStatusEl.className = '';
+  userWelcomeEl.textContent = '';
+  
+  // Очищаем все поля формы загрузки
+  clearUploadForm();
+
+  // Мгновенно скрываем список файлов и статистику
+  filesListEl.innerHTML = '<div style="text-align: center; color: #6c757d; padding: 20px;">Требуется авторизация</div>';
+  statsContentEl.innerHTML = '<div style="text-align: center; color: #6c757d; padding: 20px;">Требуется авторизация</div>';
+}
+
+// Очистка формы загрузки файлов
+function clearUploadForm() {
+  // Очищаем выбор файла
+  fileInput.value = '';
+  selectedFileEl.classList.add('hidden');
+  
+  // Очищаем статус и ссылку
+  statusEl.textContent = '';
+  linkEl.classList.add('hidden');
+  linkEl.innerHTML = '';
+}
+
+// Получение заголовков авторизации для запросов
+function getAuthHeaders() {
+  const headers = {};
+  if (authToken) {
+    headers['Authorization'] = `Bearer ${authToken}`;
+  }
+  return headers;
+}
+
+// Проверка сохраненного токена при загрузке страницы
+function checkStoredAuth() {
+  const storedToken = localStorage.getItem('authToken');
+  const storedUsername = localStorage.getItem('username');
+  
+  if (storedToken && storedUsername) {
+    authToken = storedToken;
+    currentUsername = storedUsername;
+    authSectionEl.classList.add('hidden');
+    uploadSectionEl.classList.remove('hidden');
+    userWelcomeEl.textContent = `Вы вошли как: ${currentUsername}`;
+  }
+}
+
+// Отображение информации о выбранном файле
+function updateSelectedFile() {
+  const file = fileInput.files[0];
+  if (file) {
+    fileNameEl.textContent = file.name;
+    fileSizeEl.textContent = formatFileSize(file.size);
+    selectedFileEl.classList.remove('hidden');
+    
+    // Очищаем предыдущую ссылку при выборе нового файла
+    linkEl.classList.add('hidden');
+    linkEl.innerHTML = '';
+    statusEl.textContent = '';
+  } else {
+    selectedFileEl.classList.add('hidden');
+  }
+}
+
+// Загрузка списка файлов с сервера
 async function refreshFilesList(){
   console.log('Загрузка списка файлов...');
   try{
-    const r = await fetch('/api/files');
+    const r = await fetch('/api/files', {
+      headers: getAuthHeaders()
+    });
     if(!r.ok) {
-      console.error('Ошибка загрузки списка файлов:', r.status);
-      filesListEl.innerHTML = '<div style="text-align: center; color: #dc3545; padding: 20px;">Ошибка загрузки списка файлов</div>';
+      if (r.status === 401) {
+        filesListEl.innerHTML = '<div style="text-align: center; color: #6c757d; padding: 20px;">Требуется авторизация</div>';
+      } else {
+        filesListEl.innerHTML = '<div style="text-align: center; color: #dc3545; padding: 20px;">Не удалось загрузить список файлов</div>';
+      }
       return;
     }
     const j = await r.json();
@@ -165,7 +301,9 @@ async function deleteFile(token) {
 
 async function updateDownloadCount(token) {
   try {
-    const response = await fetch('/api/files');
+    const response = await fetch('/api/files', {
+      headers: getAuthHeaders()
+    });
     if (response.ok) {
       const data = await response.json();
       const file = data.files.find(f => f.token === token);
@@ -181,17 +319,18 @@ async function updateDownloadCount(token) {
   }
 }
 
-async function checkAuthStatus() {
-  authMessageEl.classList.add('hidden');
-}
-
 async function refreshDetailedStats() {
   console.log('Загрузка детальной статистики...');
   try {
-    const response = await fetch('/api/file-stats');
+    const response = await fetch('/api/file-stats', {
+      headers: getAuthHeaders()
+    });
     if (!response.ok) {
-      console.error('Ошибка загрузки детальной статистики:', response.status);
-      statsContentEl.innerHTML = '<div style="text-align: center; color: #dc3545;">Ошибка загрузки детальной статистики</div>';
+      if (response.status === 401) {
+        statsContentEl.innerHTML = '<div style="text-align: center; color: #6c757d;">Требуется авторизация</div>';
+      } else {
+        statsContentEl.innerHTML = '<div style="text-align: center; color: #dc3545;">Не удалось загрузить детальную статистику</div>';
+      }
       return;
     }
     const stats = await response.json();
@@ -253,7 +392,7 @@ async function refreshDetailedStats() {
       </div>
     `;
   } catch (error) {
-    statsContentEl.innerHTML = '<div style="text-align: center; color: #dc3545;">Ошибка загрузки детальной статистики</div>';
+    statsContentEl.innerHTML = '<div style="text-align: center; color: #dc3545;">Не удалось загрузить детальную статистику</div>';
   }
 }
 
@@ -267,39 +406,87 @@ function formatAge(seconds) {
   return `${minutes}м`;
 }
 
-refreshFilesListAndStats();
-checkAuthStatus();
+// Восстанавливаем токен до любых запросов
+checkStoredAuth();
+// Если есть токен — загрузим данные, иначе покажем, что нужна авторизация
+if (authToken) {
+  refreshFilesListAndStats();
+} else {
+  filesListEl.innerHTML = '<div style="text-align: center; color: #6c757d; padding: 20px;">Требуется авторизация</div>';
+  statsContentEl.innerHTML = '<div style="text-align: center; color: #6c757d; padding: 20px;">Требуется авторизация</div>';
+}
 
+// Обработчик изменения файла
+fileInput.addEventListener('change', updateSelectedFile);
+
+// Обработчик формы авторизации
+authForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const username = usernameInput.value.trim();
+  if (!username) {
+    alert('Введите имя пользователя');
+    return;
+  }
+  
+  await authenticate(username);
+});
+
+// Обработчик формы загрузки файла
 form.addEventListener('submit', async (e)=>{
   e.preventDefault();
+  
+  if (!authToken) {
+    alert('Необходимо авторизоваться для загрузки файлов');
+    return;
+  }
+  
   const f = fileInput.files[0];
   if(!f){
     alert('Выберите файл');
     return;
   }
+  
   statusEl.textContent = 'Загрузка...';
   linkEl.classList.add('hidden');
 
   const fd = new FormData();
   fd.append('file', f, f.name);
 
-  const r = await fetch('/api/upload', { method:'POST', body: fd });
-  if(!r.ok){
-    statusEl.textContent = 'Ошибка загрузки';
-    return;
+  const headers = getAuthHeaders();
+  
+  try {
+    const r = await fetch('/api/upload', { 
+      method:'POST', 
+      body: fd,
+      headers: headers
+    });
+    
+    if(!r.ok){
+      if (r.status === 401) {
+        statusEl.textContent = 'Ошибка авторизации. Токен истек.';
+        logout();
+      } else {
+        statusEl.textContent = 'Ошибка загрузки файла';
+      }
+      return;
+    }
+    
+    const j = await r.json();
+    statusEl.textContent = 'Файл успешно загружен!';
+    
+    linkEl.innerHTML = `
+      <div style="margin-bottom: 8px;">Ссылка для скачивания:</div>
+      <div style="display: flex; gap: 8px; align-items: center;">
+        <input type="text" value="${j.url}" readonly style="flex: 1; padding: 4px; border: 1px solid #ccc; border-radius: 4px; font-family: monospace;">
+        <button onclick="navigator.clipboard.writeText('${j.url}')" style="padding: 4px 8px; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer;">Копировать</button>
+      </div>
+      <div style="margin-top: 8px;">
+        <a href="${j.url}" target="_self" style="color: #0064e0; text-decoration: none;">Открыть ссылку</a>
+      </div>
+    `;
+    linkEl.classList.remove('hidden');
+    await refreshFilesListAndStats();
+  } catch (error) {
+    statusEl.textContent = 'Ошибка загрузки файла';
   }
-  const j = await r.json();
-  statusEl.textContent = 'Готово';
-  linkEl.innerHTML = `
-    <div style="margin-bottom: 8px;">Ссылка для скачивания:</div>
-    <div style="display: flex; gap: 8px; align-items: center;">
-      <input type="text" value="${j.url}" readonly style="flex: 1; padding: 4px; border: 1px solid #ccc; border-radius: 4px; font-family: monospace;">
-      <button onclick="navigator.clipboard.writeText('${j.url}')" style="padding: 4px 8px; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer;">Копировать</button>
-    </div>
-    <div style="margin-top: 8px;">
-      <a href="${j.url}" target="_self" style="color: #0064e0; text-decoration: none;">Открыть ссылку</a>
-    </div>
-  `;
-  linkEl.classList.remove('hidden');
-  await refreshFilesListAndStats();
 });

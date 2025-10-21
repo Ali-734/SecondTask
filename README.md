@@ -1,18 +1,19 @@
 # FileShare - Сервис обмена файлами
 
-Простой веб-сервис для загрузки и скачивания файлов, написанный на Java.
+Простой веб-сервис для загрузки и скачивания файлов, написанный на Java с токен-авторизацией.
 
 ## Возможности
 
 - **Загрузка файлов** через веб-интерфейс с поддержкой всех типов файлов
 - **Скачивание файлов** по уникальным ссылкам с правильными именами
-- **Управление файлами**: просмотр списка, удаление через веб-интерфейс
-- **Статистика использования**: базовая и детальная статистика по файлам
+- **Токен-авторизация** - доступ только для авторизованных пользователей
+- **Управление файлами**: просмотр списка, удаление через веб-интерфейс (только для авторизованных)
+- **Статистика использования**: базовая и детальная статистика по файлам (только для авторизованных)
 - **Сортировка файлов** по различным критериям (имя, размер, дата, скачивания)
 - **Автоматическая очистка** старых файлов по истечении срока жизни
-- **Опциональная аутентификация** для загрузки файлов
 - **REST API** для интеграции с другими приложениями
 - **Адаптивный дизайн** для работы на мобильных устройствах
+- **Безопасность**: файлы и статистика скрыты от неавторизованных пользователей
 
 ## Требования
 
@@ -48,18 +49,24 @@ java -cp build com.fileshare.FileShareApplication
 ```
 FileShare server started on port 8080
 Data directory: C:\Users\farii\IdeaProjects\SecondTask\data
-Upload auth: disabled
+Upload auth: enabled (token-based)
+Token expiration: 24 hours
 ```
 
 ### 3. Использование
 
 Откройте браузер и перейдите по адресу: http://localhost:8080
 
+**Для неавторизованных пользователей:**
+- **Главная страница**: Форма авторизации
+- **Доступ**: Только авторизация
+
+**Для авторизованных пользователей:**
 - **Главная страница**: Загрузка файлов через веб-форму
-- **API статистики**: http://localhost:8080/api/stats (базовая)
-- **Детальная статистика**: http://localhost:8080/api/file-stats
-- **Список файлов**: http://localhost:8080/api/files
-- **Скачивание файлов**: http://localhost:8080/d/{token}
+- **API статистики**: http://localhost:8080/api/stats (базовая) - требует авторизации
+- **Детальная статистика**: http://localhost:8080/api/file-stats - требует авторизации
+- **Список файлов**: http://localhost:8080/api/files - требует авторизации
+- **Скачивание файлов**: http://localhost:8080/d/{token} - доступно всем (по прямой ссылке)
 
 ## Настройка через переменные окружения
 
@@ -67,7 +74,8 @@ Upload auth: disabled
 |------------|--------------|----------|
 | `PORT` | 8080 | Порт для веб-сервера |
 | `DATA_DIR` | data | Директория для хранения файлов |
-| `UPLOAD_TOKEN` | (отключено) | Токен для аутентификации загрузки |
+| `AUTH_ENABLED` | true | Включить токен-авторизацию |
+| `TOKEN_EXPIRATION_HOURS` | 24 | Время жизни токена в часах |
 | `DAYS_TO_LIVE` | 30 | Количество дней хранения файлов |
 
 ### Пример запуска с настройками
@@ -76,12 +84,13 @@ Upload auth: disabled
 # Windows
 set PORT=9000
 set DATA_DIR=myfiles
-set UPLOAD_TOKEN=secret123
+set AUTH_ENABLED=true
+set TOKEN_EXPIRATION_HOURS=48
 set DAYS_TO_LIVE=7
 java -cp build com.fileshare.FileShareApplication
 
 # Linux/macOS
-PORT=9000 DATA_DIR=myfiles UPLOAD_TOKEN=secret123 DAYS_TO_LIVE=7 java -cp build com.fileshare.FileShareApplication
+PORT=9000 DATA_DIR=myfiles AUTH_ENABLED=true TOKEN_EXPIRATION_HOURS=48 DAYS_TO_LIVE=7 java -cp build com.fileshare.FileShareApplication
 ```
 
 ## API
@@ -102,9 +111,27 @@ Content-Type: multipart/form-data
 }
 ```
 
-### Базовая статистика
+### Авторизация
+```
+POST /api/auth
+Content-Type: application/json
+
+Тело запроса:
+{
+  "username": "имя_пользователя"
+}
+
+Ответ:
+{
+  "token": "токен_доступа",
+  "username": "имя_пользователя"
+}
+```
+
+### Базовая статистика (требует авторизации)
 ```
 GET /api/stats
+Authorization: Bearer {token}
 
 Ответ:
 {
@@ -114,9 +141,10 @@ GET /api/stats
 }
 ```
 
-### Детальная статистика
+### Детальная статистика (требует авторизации)
 ```
 GET /api/file-stats
+Authorization: Bearer {token}
 
 Ответ:
 {
@@ -147,9 +175,10 @@ GET /api/file-stats
 }
 ```
 
-### Список файлов
+### Список файлов (требует авторизации)
 ```
 GET /api/files
+Authorization: Bearer {token}
 
 Ответ:
 {
@@ -194,18 +223,22 @@ src/
 │   │   │   ├── Storage.java             # Управление файлами
 │   │   │   └── Auth.java                # Аутентификация
 │   │   ├── handlers/                     # HTTP обработчики
+│   │   │   ├── AuthHandler.java         # Авторизация
 │   │   │   ├── FileUploadHandler.java   # Загрузка файлов
 │   │   │   ├── FileDownloadHandler.java # Скачивание файлов
 │   │   │   ├── StaticFileHandler.java   # Статические файлы
 │   │   │   ├── StatisticsHandler.java   # Базовая статистика
 │   │   │   ├── DetailedStatisticsHandler.java # Детальная статистика
 │   │   │   ├── FileListHandler.java     # Список файлов
-│   │   │   └── FileDeleteHandler.java   # Удаление файлов
+│   │   │   └── FileDeleteHandler.java  # Удаление файлов
 │   │   ├── services/                     # Сервисы
 │   │   │   └── CleanupService.java      # Очистка старых файлов
 │   │   └── utils/                       # Утилиты
 │   │       ├── Environment.java         # Переменные окружения
-│   │       └── MimeTypeDetector.java    # Определение MIME типов
+│   │       ├── MimeTypeDetector.java    # Определение MIME типов
+│   │       ├── HttpUtils.java           # HTTP утилиты
+│   │       ├── JsonUtils.java           # JSON утилиты
+│   │       └── PathUtils.java           # Утилиты для путей
 │   └── resources/public/
 │       ├── index.html                   # Веб-интерфейс
 │       ├── script.js                    # JavaScript

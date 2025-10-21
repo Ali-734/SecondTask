@@ -8,18 +8,44 @@
   </head>
   <body>
     <div class="container">
-      <h1>Загрузка файла</h1>
-      <form id="uploadForm">
-        <input type="file" id="fileInput" required />
-        <button type="submit">Загрузить</button>
-      </form>
-      <div id="status"></div>
-      <div id="link" class="hidden"></div>
+      <h1>Сервис обмена файлами</h1>
+      
+      <!-- Форма авторизации -->
+      <div id="authSection" class="card">
+        <h2>Авторизация</h2>
+        <p>Введите любое имя пользователя для получения токена доступа</p>
+        <form id="authForm">
+          <input type="text" id="usernameInput" placeholder="Введите имя пользователя" required />
+          <button type="submit">Войти</button>
+        </form>
+        <div id="authStatus"></div>
+      </div>
+      
+      <!-- Форма загрузки файла -->
+      <div id="uploadSection" class="card hidden">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+          <h2 style="margin: 0;">Загрузка файла</h2>
+          <div>
+            <span id="userWelcome" style="margin-right: 12px; color: #666;"></span>
+            <button onclick="logout()" style="padding: 6px 12px; background: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer;">Выйти</button>
+          </div>
+        </div>
+        <form id="uploadForm">
+          <div class="file-input-wrapper">
+            <input type="file" id="fileInput" required />
+            <label for="fileInput" class="file-input-button">Выберите файл</label>
+          </div>
+          <div id="selectedFile" class="hidden" style="margin: 12px 0; padding: 12px; background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 6px;">
+            <strong>Выбранный файл:</strong> <span id="fileName"></span> (<span id="fileSize"></span>)
+          </div>
+          <button type="submit">Загрузить</button>
+        </form>
+        <div id="status"></div>
+        <div id="link" class="hidden"></div>
+      </div>
+      
       <hr />
       <h2>Статистика по файлам</h2>
-      <div id="authMessage" class="hidden" style="background: #fff3cd; border: 1px solid #ffeaa7; color: #856404; padding: 12px; border-radius: 8px; margin-bottom: 16px;">
-        Загрузка файлов доступна только авторизованным пользователям
-      </div>
       
       <!-- Сортировка -->
       <div style="margin-bottom: 16px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
