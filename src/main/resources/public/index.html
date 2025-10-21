@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Сервис обмена файлами</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="container">
+      <h1>Загрузка файла</h1>
+      <form id="uploadForm">
+        <input type="file" id="fileInput" required />
+        <button type="submit">Загрузить</button>
+      </form>
+      <div id="status"></div>
+      <div id="link" class="hidden"></div>
+      <hr />
+      <h2>Статистика по файлам</h2>
+      <div id="authMessage" class="hidden" style="background: #fff3cd; border: 1px solid #ffeaa7; color: #856404; padding: 12px; border-radius: 8px; margin-bottom: 16px;">
+        Загрузка файлов доступна только авторизованным пользователям
+      </div>
+      
+      <!-- Сортировка -->
+      <div style="margin-bottom: 16px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+        <label for="sortSelect">Сортировка:</label>
+        <select id="sortSelect" style="padding: 6px 12px; border: 1px solid #ccc; border-radius: 4px;">
+          <option value="name">По имени</option>
+          <option value="size">По размеру</option>
+          <option value="downloads">По скачиваниям</option>
+          <option value="date">По дате загрузки</option>
+          <option value="lastDownload">По дате последнего скачивания</option>
+        </select>
+        <label for="sortOrder">Порядок:</label>
+        <select id="sortOrder" style="padding: 6px 12px; border: 1px solid #ccc; border-radius: 4px;">
+          <option value="default">По умолчанию</option>
+          <option value="asc">По возрастанию</option>
+          <option value="desc">По убыванию</option>
+        </select>
+        <button onclick="applySorting()" style="padding: 6px 12px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer;">Применить</button>
+      </div>
+      
+      <!-- Расширенная статистика -->
+      <div id="detailedStats" class="card">
+        <h3 style="margin-top: 0; color: #333;">Детальная статистика</h3>
+        <div id="statsContent"></div>
+      </div>
+      
+      <div id="filesList"></div>
+    </div>
+    <script src="/script.js"></script>
+  </body>
+  </html>

@@ -1,0 +1,11 @@
+build/
+data/
+*.log
+*.tmp
+.DS_Store
+Thumbs.db
+out/
+bin/
+/.idea/
+/*.iml
+
