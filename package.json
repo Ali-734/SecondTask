@@ -1,0 +1,14 @@
+{
+  "name": "fileshare",
+  "version": "1.0.0",
+  "description": "File sharing application - Vanilla JS frontend",
+  "main": "src/main/resources/public/script.js",
+  "scripts": {
+    "build": "echo 'Frontend uses Vanilla JS - no build needed'",
+    "start": "echo 'Use Maven to start the application: mvn exec:java'"
+  },
+  "dependencies": {},
+  "devDependencies": {},
+  "author": "Ali-734",
+  "license": "ISC"
+}

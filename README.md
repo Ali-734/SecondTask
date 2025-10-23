@@ -17,31 +17,28 @@
 
 ## Требования
 
-- Java 11 или выше
+- **Java 17 или выше**
+- **Maven 3.6 или выше**
 - Windows/Linux/macOS
 
 ## Быстрый запуск
 
-### Ручная сборка и запуск
+### Одна команда для запуска
 
 ```bash
-# 1. Создание директорий
-mkdir -p build/public
-
-# 2. Компиляция Java файлов
-javac -d build -cp src/main/java \
-  src/main/java/com/fileshare/FileShareApplication.java \
-  src/main/java/com/fileshare/core/*.java \
-  src/main/java/com/fileshare/handlers/*.java \
-  src/main/java/com/fileshare/services/*.java \
-  src/main/java/com/fileshare/utils/*.java
-
-# 3. Копирование веб-ресурсов
-cp src/main/resources/public/* build/public/
-
-# 4. Запуск приложения
-java -cp build com.fileshare.FileShareApplication
+mvn clean compile exec:java
 ```
+
+**Или если Maven не в PATH:**
+```bash
+"C:\Program Files\maven\apache-maven-3.9.11\bin\mvn.cmd" clean compile exec:java
+```
+
+Эта команда:
+1. Очищает предыдущую сборку
+2. Компилирует Java код
+3. Копирует веб-ресурсы
+4. Запускает приложение
 
 
 
@@ -87,10 +84,10 @@ set DATA_DIR=myfiles
 set AUTH_ENABLED=true
 set TOKEN_EXPIRATION_HOURS=48
 set DAYS_TO_LIVE=7
-java -cp build com.fileshare.FileShareApplication
+mvn clean compile exec:java
 
 # Linux/macOS
-PORT=9000 DATA_DIR=myfiles AUTH_ENABLED=true TOKEN_EXPIRATION_HOURS=48 DAYS_TO_LIVE=7 java -cp build com.fileshare.FileShareApplication
+PORT=9000 DATA_DIR=myfiles AUTH_ENABLED=true TOKEN_EXPIRATION_HOURS=48 DAYS_TO_LIVE=7 mvn clean compile exec:java
 ```
 
 ## API
@@ -258,7 +255,7 @@ pkill -f com.fileshare.FileShareApplication
 
 ## Проверка работоспособности
 
-1. Запустите приложение: `java -cp build com.fileshare.FileShareApplication`
+1. Запустите приложение: `mvn clean compile exec:java`
 2. Откройте http://localhost:8080 в браузере
 3. Загрузите тестовый файл через веб-форму
 4. Скопируйте ссылку для скачивания
@@ -272,6 +269,6 @@ pkill -f com.fileshare.FileShareApplication
 ## Устранение неполадок
 
 - **Порт занят**: Измените порт через переменную `PORT`
-- **Ошибка компиляции**: Убедитесь, что используется Java 11+
+- **Ошибка компиляции**: Убедитесь, что используется Java 17+ и Maven 3.6+
 - **Файлы не сохраняются**: Проверьте права доступа к директории `DATA_DIR`
-- **Ошибка 404**: Убедитесь, что ресурсы скопированы в `build/public/`
+- **Maven не найден**: Установите Maven и добавьте в PATH

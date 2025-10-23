@@ -1,0 +1,101 @@
+body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,sans-serif;margin:0;background:#f6f7f9;color:#222}
+.container{max-width:720px;margin:40px auto;padding:24px;background:#fff;border-radius:12px;box-shadow:0 6px 24px rgba(0,0,0,.08)}
+h1{margin-top:0}
+h2{margin:24px 0 16px 0;color:#333;font-size:1.3em}
+form{display:flex;gap:12px;align-items:center}
+button{padding:8px 14px;border:0;background:#0064e0;color:#fff;border-radius:8px;cursor:pointer;transition:background .2s}
+button:hover{background:#0056b3}
+button:disabled{opacity:.5;cursor:default}
+#status{margin-top:12px;color:#555}
+#link{margin-top:12px}
+.hidden{display:none}
+code{background:#f0f2f5;padding:2px 6px;border-radius:6px}
+.file-item{transition:box-shadow .2s}
+.file-item:hover{box-shadow:0 2px 8px rgba(0,0,0,0.1)}
+hr{margin:24px 0;border:0;border-top:1px solid #e9ecef}
+
+/* Buttons */
+.btn{padding:6px 12px;border:0;border-radius:6px;cursor:pointer;font-size:.9em}
+.btn-primary{background:#0d6efd;color:#fff}
+.btn-primary:hover{background:#0b5ed7}
+.btn-success{background:#28a745;color:#fff}
+.btn-success:hover{background:#218838}
+.btn-danger{background:#dc3545;color:#fff}
+.btn-danger:hover{background:#c82333}
+
+/* File list improvements */
+.file-item .name{font-weight:600;margin-bottom:6px;word-break:break-word}
+.file-item .meta{font-size:.9em;color:#666}
+.file-actions{display:flex;gap:8px}
+
+/* Cards/grid for stats */
+.card{background:#fff;padding:10px;border:1px solid #dee2e6;border-radius:8px}
+.card h4{margin:0 0 8px 0;color:#495057;font-size:1.05em;text-align:center}
+#detailedStats h3{ text-align:center; }
+.metrics{font-size:.9em;color:#666}
+.metrics div{margin:4px 0}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-bottom:16px}
+.time-card{grid-column:1/-1}
+
+/* small chips grid for formats */
+.chips{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px}
+.chip{padding:10px;background:#f8f9fa;border:1px solid #e9ecef;border-radius:8px;text-align:center}
+.chip .metrics{font-size:.85em}
+
+/* Simple auth styles */
+#authStatus {
+  margin-top: 12px;
+  padding: 8px 12px;
+  border-radius: 4px;
+}
+
+#authStatus.success {
+  background: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+}
+
+#authStatus.error {
+  background: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+}
+
+/* Hide browser's default file input display */
+#fileInput {
+  display: none;
+}
+
+/* Custom file input button */
+.file-input-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
+.file-input-button {
+  padding: 8px 16px;
+  background: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  cursor: pointer;
+  display: inline-block;
+  color: #495057;
+  font-size: 14px;
+}
+
+.file-input-button:hover {
+  background: #e9ecef;
+}
+
+/* Responsive layout: 3 -> 2 -> 1 columns */
+@media (max-width: 1200px){
+  .stats-grid{grid-template-columns:repeat(2,1fr) !important}
+}
+@media (max-width: 900px){
+  .stats-grid{grid-template-columns:1fr !important}
+  .upload-header {
+    flex-direction: column;
+    gap: 12px;
+    text-align: center;
+  }
+}
